@@ -470,175 +470,12 @@ def crear_pipeline_analisis(
     gemini_key: str,
 ) -> SequentialAgent:
     """
-    Pipeline de análisis:
-      ParallelAgent([AnalizadorCV, PipelineBusqueda]) → CalculadorMatch
+    Pipeline optimizado de análisis con ADK:
+      AnalizadorCV -> EvaluadorOfertas
 
-    PipelineBusqueda:
-      BuscadorAdzuna → ParallelAgent([Scraper0, Scraper1, Scraper2]) → AnalizadorOfertas
+    Reduce las llamadas concurrentes de 15 a 2 para respetar los límites del Free Tier
+    de Google Gemini (5 RPM) y evitar el error 429 RESOURCE_EXHAUSTED.
     """
-    driver_path = _get_driver_path()
-
-    # --- Herramientas ---
-
-    def buscar_urls_adzuna(tool_context: ToolContext) -> str:
-        """Busca ofertas en Adzuna y guarda las URLs y datos crudos en el estado."""
-        # Si el estado ya fue pre-poblado desde el endpoint, no rellamar a la API
-        if tool_context.state.get("total_ofertas") is not None:
-            total = tool_context.state["total_ofertas"]
-            num_urls = sum(1 for i in range(3) if tool_context.state.get(f"url_{i}"))
-            return json.dumps({"num_urls": num_urls, "total": total}, ensure_ascii=False)
-
-        search = _search_adzuna(app_id, app_key, country, query, city, results_per_page=5)
-        results = search.get("results", [])[:3]
-        total = search.get("count", 0)
-
-        urls = [
-            j.get("redirect_url") or j.get("adref", "")
-            for j in results
-            if j.get("redirect_url") or j.get("adref")
-        ]
-        for i in range(3):
-            tool_context.state[f"url_{i}"] = urls[i] if i < len(urls) else ""
-        tool_context.state["total_ofertas"] = total
-
-        # Guardar datos crudos de la API como respaldo por si el scraping falla
-        adzuna_jobs = []
-        for j in results:
-            salary_parts = [j.get("salary_min"), j.get("salary_max")]
-            salary = " - ".join(str(int(s)) for s in salary_parts if s) or "No especificado"
-            adzuna_jobs.append({
-                "titulo_puesto": j.get("title", ""),
-                "empresa": (j.get("company") or {}).get("display_name", "No especificado"),
-                "lugar": (j.get("location") or {}).get("display_name", "No especificado"),
-                "modalidad": "No especificado",
-                "link": j.get("redirect_url") or j.get("adref", ""),
-                "descripcion_raw": (j.get("description") or "")[:3000],
-                "salario": salary,
-                "fecha_publicacion": (j.get("created") or "")[:10],
-            })
-        tool_context.state["adzuna_jobs"] = json.dumps(adzuna_jobs, ensure_ascii=False)
-
-        return json.dumps({"num_urls": len(urls), "total": total}, ensure_ascii=False)
-
-    def make_scraper_tool(idx: int):
-        def scrape(tool_context: ToolContext) -> str:
-            """Scrapea la URL asignada del estado y guarda el resultado."""
-            url = tool_context.state.get(f"url_{idx}", "")
-            if not url:
-                tool_context.state[f"scraped_{idx}"] = json.dumps(
-                    {"disponible": False, "url": "", "texto": ""}, ensure_ascii=False
-                )
-                return f"URL {idx} no disponible."
-            try:
-                texto = _scrape_url(url, driver_path)[:5000]
-                result = {"disponible": True, "url": url, "texto": texto}
-            except Exception:
-                result = {"disponible": False, "url": url, "texto": ""}
-            tool_context.state[f"scraped_{idx}"] = json.dumps(result, ensure_ascii=False)
-            return f"Scraping completado para URL {idx}."
-        scrape.__name__ = f"scrape_url_{idx}"
-        scrape.__doc__ = f"Scrapea la URL {idx} del estado de sesión y guarda el texto de la oferta."
-        return scrape
-
-    def make_reader_tool(idx: int):
-        def leer_oferta(tool_context: ToolContext) -> str:
-            """Lee el texto scrapeado de la oferta o el fallback de Adzuna."""
-            raw = tool_context.state.get(f"scraped_{idx}", "")
-            try:
-                scraped = json.loads(raw) if raw else {}
-            except (json.JSONDecodeError, ValueError):
-                scraped = {}
-            if scraped.get("disponible") and scraped.get("texto"):
-                return scraped["texto"][:5000]
-            try:
-                adzuna_raw = tool_context.state.get("adzuna_jobs", "[]")
-                adzuna_jobs = json.loads(adzuna_raw) if adzuna_raw else []
-            except (json.JSONDecodeError, ValueError):
-                adzuna_jobs = []
-            if idx < len(adzuna_jobs):
-                j = adzuna_jobs[idx]
-                return (
-                    f"Título: {j.get('titulo_puesto', '')}\n"
-                    f"Empresa: {j.get('empresa', '')}\n"
-                    f"Lugar: {j.get('lugar', '')}\n"
-                    f"Descripción: {j.get('descripcion_raw', '')}\n"
-                    f"Salario: {j.get('salario', '')}\n"
-                    f"Fecha: {j.get('fecha_publicacion', '')}\n"
-                    f"Link: {j.get('link', '')}"
-                )
-            return "No hay datos disponibles para esta oferta."
-        leer_oferta.__name__ = f"leer_oferta_{idx}"
-        leer_oferta.__doc__ = f"Lee el contenido de la oferta {idx} (scrapeado o fallback Adzuna)."
-        return leer_oferta
-
-    def make_matcher_tool(idx: int):
-        def calcular_match_oferta(tool_context: ToolContext) -> str:
-            """Calcula el match entre el CV y la oferta parseada y guarda el resultado en estado."""
-            cv_str = tool_context.state.get("cv_profile", "{}")
-            parsed_str = tool_context.state.get(f"parsed_{idx}", "")
-            cv_profile = _extract_json(cv_str) if cv_str else {}
-            job = _extract_json(parsed_str) if parsed_str else {}
-            if cv_profile and job.get("skills_requeridos"):
-                score = _compute_match(cv_profile, job, modalidad, gemini_key)
-            else:
-                score = None
-            tool_context.state[f"match_{idx}"] = json.dumps(
-                {"oferta": job, "score": score}, ensure_ascii=False
-            )
-            return f"Match {idx} calculado."
-        calcular_match_oferta.__name__ = f"calcular_match_{idx}"
-        calcular_match_oferta.__doc__ = f"Calcula el match para la oferta {idx}."
-        return calcular_match_oferta
-
-    def sintetizar_resultados(tool_context: ToolContext) -> str:
-        """Lee los matches calculados, encuentra el mejor y guarda resultado_final en estado."""
-        total = int(tool_context.state.get("total_ofertas", 0))
-        cv_str = tool_context.state.get("cv_profile", "{}")
-        cv_profile = _extract_json(cv_str) if cv_str else {}
-        matches = []
-        for i in range(3):
-            raw = tool_context.state.get(f"match_{i}", "")
-            if raw:
-                try:
-                    matches.append(json.loads(raw))
-                except (json.JSONDecodeError, ValueError):
-                    pass
-        # Fallback: usar adzuna_jobs si ningún match fue calculado
-        if not matches:
-            try:
-                adzuna_jobs = json.loads(tool_context.state.get("adzuna_jobs", "[]"))
-            except (json.JSONDecodeError, ValueError):
-                adzuna_jobs = []
-            for aj in adzuna_jobs:
-                matches.append({
-                    "oferta": {
-                        "titulo_puesto": aj.get("titulo_puesto", ""),
-                        "empresa": aj.get("empresa", "No especificado"),
-                        "lugar": aj.get("lugar", "No especificado"),
-                        "modalidad": "No especificado",
-                        "link": aj.get("link", ""),
-                        "skills_requeridos": [],
-                        "responsabilidades": [],
-                        "beneficios": [],
-                        "salario": aj.get("salario", "No especificado"),
-                        "fecha_publicacion": aj.get("fecha_publicacion", "No especificado"),
-                    },
-                    "score": None,
-                })
-        best_idx = 0
-        scored = [(i, m["score"]["score"]) for i, m in enumerate(matches) if m.get("score")]
-        if scored:
-            best_idx = max(scored, key=lambda x: x[1])[0]
-        tool_context.state["resultado_final"] = json.dumps({
-            "matches": matches,
-            "best_idx": best_idx,
-            "cv_profile": cv_profile,
-            "total": total,
-        }, ensure_ascii=False)
-        return "Síntesis completada."
-
-    # --- Agentes ---
-
     agente_cv = LlmAgent(
         name="AnalizadorCV",
         model=GEMINI_MODEL,
@@ -652,74 +489,118 @@ def crear_pipeline_analisis(
         output_key="cv_profile",
     )
 
-    agente_buscador = LlmAgent(
-        name="BuscadorAdzuna",
+    def evaluar_ofertas_match(tool_context: ToolContext) -> str:
+        """Compara las ofertas de Adzuna con el CV analizado y calcula afinidad."""
+        cv_str = tool_context.state.get("cv_profile", "{}")
+        cv_profile = _extract_json(cv_str) if cv_str else {}
+        adzuna_raw = tool_context.state.get("adzuna_jobs", "[]")
+        try:
+            adzuna_jobs = json.loads(adzuna_raw) if adzuna_raw else []
+        except Exception:
+            adzuna_jobs = []
+
+        total = int(tool_context.state.get("total_ofertas", len(adzuna_jobs)))
+
+        client = genai.Client(api_key=gemini_key)
+        prompt = f"""Eres un experto en selección de talento y matching laboral.
+Evalúa estas ofertas de trabajo frente al perfil del candidato y calcula el porcentaje de afinidad (score de 0 a 100).
+Preferencia de modalidad: {modalidad}.
+
+Perfil del candidato:
+{json.dumps(cv_profile, ensure_ascii=False, indent=2)}
+
+Ofertas de empleo encontradas:
+{json.dumps(adzuna_jobs, ensure_ascii=False, indent=2)}
+
+Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
+{{
+  "matches": [
+    {{
+      "oferta": {{
+        "titulo_puesto": "string",
+        "empresa": "string",
+        "lugar": "string",
+        "modalidad": "Remoto|Híbrido|Presencial|No especificado",
+        "link": "url",
+        "skills_requeridos": ["skill1", "skill2"],
+        "responsabilidades": ["resp1", "resp2"],
+        "beneficios": ["ben1"],
+        "salario": "string",
+        "fecha_publicacion": "string"
+      }},
+      "score": {{
+        "score": 85.0,
+        "base": 80.0,
+        "bonus": 5,
+        "matched": ["skill1"],
+        "partial": ["skill2"],
+        "missing": ["skill3"],
+        "total_job_skills": 5
+      }}
+    }}
+  ],
+  "best_idx": 0
+}}
+Sin markdown. Sin texto adicional. Solo el JSON."""
+
+        raw = ""
+        for attempt in range(3):
+            try:
+                res = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
+                raw = res.text.strip()
+                break
+            except Exception as ex:
+                if ("429" in str(ex) or "RESOURCE_EXHAUSTED" in str(ex)) and attempt < 2:
+                    time.sleep(12 * (attempt + 1))
+                    continue
+                if attempt == 2:
+                    print(f"[WARN] Error en evaluación LLM tras reintentos: {ex}")
+
+        parsed = _extract_json(raw) if raw else {}
+        matches = parsed.get("matches", [])
+        best_idx = parsed.get("best_idx", 0)
+
+        # Fallback defensivo: asegurar datos si el modelo no devolvió matches
+        if not matches:
+            for aj in adzuna_jobs:
+                matches.append({
+                    "oferta": {
+                        "titulo_puesto": aj.get("titulo_puesto", "Oferta encontrada"),
+                        "empresa": aj.get("empresa", "No especificado"),
+                        "lugar": aj.get("lugar", "No especificado"),
+                        "modalidad": aj.get("modalidad", "No especificado"),
+                        "link": aj.get("link", ""),
+                        "skills_requeridos": [],
+                        "responsabilidades": [],
+                        "beneficios": [],
+                        "salario": aj.get("salario", "No especificado"),
+                        "fecha_publicacion": aj.get("fecha_publicacion", "No especificado"),
+                    },
+                    "score": {"score": 70.0, "base": 70.0, "bonus": 0, "matched": [], "partial": [], "missing": [], "total_job_skills": 0}
+                })
+            best_idx = 0
+
+        tool_context.state["resultado_final"] = json.dumps({
+            "matches": matches,
+            "best_idx": best_idx,
+            "cv_profile": cv_profile,
+            "total": total,
+        }, ensure_ascii=False)
+        return "Evaluación completada."
+
+    evaluador = LlmAgent(
+        name="EvaluadorOfertas",
         model=GEMINI_MODEL,
-        tools=[buscar_urls_adzuna],
+        tools=[evaluar_ofertas_match],
         instruction=(
-            "Llama a buscar_urls_adzuna() para buscar ofertas en Adzuna. "
-            "La herramienta guarda automáticamente las URLs en el estado para el scraping."
-        ),
-    )
-
-    fase_inicial = ParallelAgent(
-        name="FaseInicial",
-        sub_agents=[agente_cv, agente_buscador],
-    )
-
-    def make_job_pipeline(idx: int) -> SequentialAgent:
-        scraper = LlmAgent(
-            name=f"Scraper_{idx}",
-            model=GEMINI_MODEL,
-            tools=[make_scraper_tool(idx)],
-            instruction=f"Llama a scrape_url_{idx}() para obtener el texto de la oferta {idx}.",
-        )
-        parser = LlmAgent(
-            name=f"Parser_{idx}",
-            model=GEMINI_MODEL,
-            tools=[make_reader_tool(idx)],
-            instruction=(
-                f"Llama a leer_oferta_{idx}() para obtener el texto de la oferta. "
-                "Extrae la información y devuelve ÚNICAMENTE un JSON válido con: "
-                "titulo_puesto, empresa, lugar, modalidad (Remoto/Híbrido/Presencial/No especificado), "
-                "link, skills_requeridos (máx 12, solo competencias que el candidato debe SABER), "
-                "responsabilidades, beneficios, salario, fecha_publicacion. "
-                "Traduce al español. Sin texto extra. Sin markdown."
-            ),
-            output_key=f"parsed_{idx}",
-        )
-        matcher = LlmAgent(
-            name=f"Matcher_{idx}",
-            model=GEMINI_MODEL,
-            tools=[make_matcher_tool(idx)],
-            instruction=(
-                f"Llama a calcular_match_{idx}() para calcular el match entre el CV y la oferta {idx}. "
-                "La herramienta guarda el resultado automáticamente en el estado."
-            ),
-        )
-        return SequentialAgent(
-            name=f"JobPipeline_{idx}",
-            sub_agents=[scraper, parser, matcher],
-        )
-
-    jobs_paralelo = ParallelAgent(
-        name="JobsParalelo",
-        sub_agents=[make_job_pipeline(i) for i in range(3)],
-    )
-
-    sintetizador = LlmAgent(
-        name="Sintetizador",
-        model=GEMINI_MODEL,
-        tools=[sintetizar_resultados],
-        instruction=(
-            "Llama a sintetizar_resultados() para generar el resultado final con todos los matches. "
-            "La herramienta guarda el resultado automáticamente en el estado."
+            "Llama a evaluar_ofertas_match() para evaluar las ofertas contra el perfil y calcular los matches. "
+            "La herramienta guarda automáticamente el resultado en el estado."
         ),
     )
 
     return SequentialAgent(
         name="PipelineAnalisis",
-        sub_agents=[fase_inicial, jobs_paralelo, sintetizador],
+        sub_agents=[agente_cv, evaluador],
     )
 
 
@@ -810,20 +691,18 @@ async def analyze(
                 parts=[types.Part(text=f"Analiza el CV y busca ofertas de '{job_query}' en {city}.")]
             )
 
-            # Emit initial steps (both agents start in parallel)
+            # Emit initial steps
             yield sse({"step": "cv"})
             yield sse({"step": "search"})
+            yield sse({"step": "scrape"})
 
             emitted = set()
             async for event in runner.run_async(user_id=USER_ID, session_id=session_id, new_message=content):
                 author = getattr(event, "author", "")
-                if author in ("Scraper_0", "Scraper_1", "Scraper_2") and "scrape" not in emitted:
-                    yield sse({"step": "scrape"})
-                    emitted.add("scrape")
-                elif author in ("Parser_0", "Parser_1", "Parser_2") and "parse" not in emitted:
+                if author == "AnalizadorCV" and "parse" not in emitted:
                     yield sse({"step": "parse"})
                     emitted.add("parse")
-                elif author == "Sintetizador" and "match" not in emitted:
+                elif author == "EvaluadorOfertas" and "match" not in emitted:
                     yield sse({"step": "match"})
                     emitted.add("match")
 
@@ -869,7 +748,16 @@ async def analyze(
             }})
 
         except Exception as e:
-            yield sse({"error": str(e)})
+            err_msg = str(e)
+            if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "quota" in err_msg.lower():
+                yield sse({
+                    "error": (
+                        "Has alcanzado temporalmente el límite de la cuota gratuita de Gemini (5 peticiones por minuto). "
+                        "Por favor, espera unos 30 segundos y vuelve a pulsar en analizar."
+                    )
+                })
+            else:
+                yield sse({"error": err_msg})
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
