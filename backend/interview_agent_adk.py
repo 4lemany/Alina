@@ -85,7 +85,7 @@ class InterviewADKAgent:
         job_offer: Dict[str, Any],
         cv_profile: Optional[Dict[str, Any]] = None,
         total_questions: int = 6,
-        model_name: str = "gemini-2.5-flash",
+        model_name: str = os.getenv("GEMINI_MODEL", "gemini-3.6-flash"),
     ) -> None:
         if not api_key.strip():
             raise ValueError("Se requiere GEMINI_API_KEY para crear el agente de entrevista.")

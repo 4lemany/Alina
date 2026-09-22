@@ -65,7 +65,7 @@ interview_sessions: dict[str, "InterviewADKAgent"] = {}
 _DRIVER_PATH: Optional[str] = None
 
 # Constantes ADK
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 ANALISIS_APP_NAME = "analisis_app"
 USER_ID = "user_1"
 

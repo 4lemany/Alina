@@ -13,7 +13,7 @@ from google.adk.tools.tool_context import ToolContext
 from google.genai import types
 
 # --- Constantes ---
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 APP_NAME = "cover_letter_app"
 USER_ID = "user_1"
 
