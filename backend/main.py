@@ -70,37 +70,75 @@ ANALISIS_APP_NAME = "analisis_app"
 USER_ID = "user_1"
 
 
-def _get_driver_path() -> str:
+def _get_driver_path() -> Optional[str]:
     global _DRIVER_PATH
-    if _DRIVER_PATH is None:
+    if _DRIVER_PATH is not None:
+        return _DRIVER_PATH
+
+    # En entornos serverless como Vercel o AWS Lambda, el filesystem es de solo lectura y no hay Chrome
+    if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        return None
+
+    try:
         raw = ChromeDriverManager().install()
         candidate = os.path.join(os.path.dirname(raw), "chromedriver")
         _DRIVER_PATH = candidate if os.path.isfile(candidate) else raw
+    except Exception as e:
+        print(f"[WARN] ChromeDriver no disponible ({e}), se usará scraping HTTP o datos directos de Adzuna.")
+        _DRIVER_PATH = None
     return _DRIVER_PATH
 
 
 # ─── JOB FINDER LOGIC ────────────────────────────────────────────────────────
 
 def _setup_driver(driver_path=None):
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    )
-    if driver_path is None:
-        driver_path = ChromeDriverManager().install()
-        candidate = os.path.join(os.path.dirname(driver_path), "chromedriver")
-        if os.path.isfile(candidate):
-            driver_path = candidate
-    return webdriver.Chrome(service=Service(driver_path), options=chrome_options)
+    if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        return None
+
+    try:
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument(
+            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        )
+        if driver_path is None:
+            driver_path = _get_driver_path()
+        if not driver_path:
+            return None
+        return webdriver.Chrome(service=Service(driver_path), options=chrome_options)
+    except Exception as e:
+        print(f"[WARN] No se pudo inicializar Selenium ({e}).")
+        return None
 
 
-def _scrape_url(url: str, driver_path: str) -> str:
+def _scrape_url(url: str, driver_path: Optional[str] = None) -> str:
+    # 1. Intentar scraping ligero con requests (rápido y compatible con Vercel/serverless)
+    try:
+        resp = requests.get(
+            url,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+            timeout=5,
+            allow_redirects=True,
+        )
+        if resp.status_code == 200 and resp.text:
+            import re
+            text = re.sub(r'<script.*?</script>', ' ', resp.text, flags=re.DOTALL | re.IGNORECASE)
+            text = re.sub(r'<style.*?</style>', ' ', text, flags=re.DOTALL | re.IGNORECASE)
+            text = re.sub(r'<[^>]+>', ' ', text)
+            clean = ' '.join(text.split())
+            if len(clean) > 200:
+                return clean[:5000]
+    except Exception:
+        pass
+
+    # 2. Si hay driver Selenium disponible (ej. en desarrollo local con Chrome instalado), usarlo
     driver = _setup_driver(driver_path)
+    if driver is None:
+        return ""
     try:
         driver.get(url)
         try:
@@ -119,8 +157,14 @@ def _scrape_url(url: str, driver_path: str) -> str:
         driver.execute_script("window.scrollTo(0, 0);")
         time.sleep(0.5)
         return driver.execute_script("return document.body.innerText;")
+    except Exception as e:
+        print(f"[WARN] Error durante scraping con Selenium: {e}")
+        return ""
     finally:
-        driver.quit()
+        try:
+            driver.quit()
+        except Exception:
+            pass
 
 
 def _search_adzuna(app_id, app_key, country, what, where, results_per_page=5):
