@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import PasswordModal from '../components/PasswordModal'
 
 const MODALITIES = ['Sin preferencia', 'Remoto', 'Híbrido', 'Presencial']
 
@@ -14,6 +15,7 @@ export default function LandingPage() {
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
   const [mode, setMode] = useState('search') // 'search' | 'manual'
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [cvFile, setCvFile] = useState(null)
   const [dragging, setDragging] = useState(false)
   const [jobQuery, setJobQuery] = useState('Data Scientist')
@@ -58,7 +60,32 @@ export default function LandingPage() {
             </div>
             <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em', color: 'white' }}>Alina</span>
           </div>
-          <span style={{ display: 'inline-block', padding: '3px 10px', fontSize: 11, fontWeight: 600, letterSpacing: '0.02em', borderRadius: 20, background: 'rgba(255,255,255,0.2)', color: 'white' }}>Beta</span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: 20,
+                background: 'rgba(255,255,255,0.18)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.25)',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+              }}
+              title="Acceso exclusivo al Directorio de Valencia"
+            >
+              <span>🔒</span>
+              <span>Directorio Valencia</span>
+            </button>
+            <span style={{ display: 'inline-block', padding: '3px 10px', fontSize: 11, fontWeight: 600, letterSpacing: '0.02em', borderRadius: 20, background: 'rgba(255,255,255,0.2)', color: 'white' }}>Beta</span>
+          </div>
         </div>
       </header>
 
@@ -114,22 +141,31 @@ export default function LandingPage() {
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>Rellena los campos y sube tu CV para comenzar.</p>
 
                 {/* Mode toggle */}
-                <div style={{ display: 'flex', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 3, marginBottom: 8 }}>
+                <div style={{ display: 'flex', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 3, marginBottom: 8, gap: 2 }}>
                   {[
                     { id: 'search', label: 'Buscar en Adzuna' },
                     { id: 'manual', label: 'Pegar oferta' },
-                  ].map(({ id, label }) => (
+                    { id: 'directorio', label: 'Directorio Valencia 🔒', isPrivate: true },
+                  ].map(({ id, label, isPrivate }) => (
                     <button
                       key={id}
                       type="button"
-                      onClick={() => { setMode(id); setError('') }}
+                      onClick={() => {
+                        if (isPrivate) {
+                          setShowPasswordModal(true)
+                        } else {
+                          setMode(id)
+                          setError('')
+                        }
+                      }}
                       style={{
-                        flex: 1, padding: '7px 0', fontSize: 13, fontWeight: 600,
+                        flex: 1, padding: '7px 4px', fontSize: 12.5, fontWeight: 600,
                         border: 'none', borderRadius: 6, cursor: 'pointer',
-                        background: mode === id ? 'var(--surface)' : 'transparent',
-                        color: mode === id ? 'var(--text)' : 'var(--text-muted)',
-                        boxShadow: mode === id ? 'var(--shadow)' : 'none',
+                        background: mode === id && !isPrivate ? 'var(--surface)' : 'transparent',
+                        color: isPrivate ? '#2563eb' : (mode === id ? 'var(--text)' : 'var(--text-muted)'),
+                        boxShadow: mode === id && !isPrivate ? 'var(--shadow)' : 'none',
                         transition: 'all 0.15s',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {label}
@@ -244,6 +280,16 @@ export default function LandingPage() {
         <p style={{ fontSize: 12, color: 'var(--text-light)', fontWeight: 600, letterSpacing: '-0.01em' }}>Alina</p>
         <p style={{ fontSize: 12, color: 'var(--text-light)' }}>Gemini · Adzuna · ADK</p>
       </footer>
+
+      {/* MODAL DE CONTRASEÑA ESTRICTA */}
+      <PasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onSuccess={() => {
+          setShowPasswordModal(false)
+          navigate('/directorio')
+        }}
+      />
     </div>
   )
 }
