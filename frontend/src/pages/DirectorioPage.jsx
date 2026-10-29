@@ -73,10 +73,17 @@ export default function DirectorioPage() {
   const [onlyMissingEmail, setOnlyMissingEmail] = useState(false)
   const [filterOnlyFavorites, setFilterOnlyFavorites] = useState(false)
 
+  // Pestaña principal: 'directorio' | 'kanban' | 'mapa'
+  const [activeTab, setActiveTab] = useState('directorio')
+
   // Modo de visualización: 'list' (tabla) o 'grid' (casillas estilo Drive: 3, 6 o 9 por fila)
   const [viewMode, setViewMode] = useState('list') // 'list' | 'grid'
   const [gridColumns, setGridColumns] = useState(3) // 3 | 6 | 9
   const [tableDensity, setTableDensity] = useState('compact') // 'compact' | 'normal'
+
+  // Modal generador de carta / mensaje
+  const [showCoverLetterModal, setShowCoverLetterModal] = useState(false)
+  const [coverLetterCompany, setCoverLetterCompany] = useState(null)
 
   // Estado del menú desplegable de 3 puntitos
   const [activeDropdownId, setActiveDropdownId] = useState(null)
@@ -358,6 +365,57 @@ export default function DirectorioPage() {
     window.open(`https://www.google.com/search?q=${query}`, '_blank')
   }
 
+  // 🔗 Buscar Decisor / Reclutador en LinkedIn
+  const searchDecisionMakerLinkedIn = (companyName) => {
+    const query = encodeURIComponent(`${companyName} talent acquisition OR RRHH OR recruiter OR selección Valencia`)
+    window.open(`https://www.linkedin.com/search/results/people/?keywords=${query}`, '_blank')
+  }
+
+  // 🟢 Verificar ofertas activas en InfoJobs
+  const checkActiveJobsInfojobs = (companyName) => {
+    const query = encodeURIComponent(companyName)
+    window.open(`https://www.infojobs.net/ofertas-trabajo/?keyword=${query}&sortBy=PUBLICATION_DATE`, '_blank')
+  }
+
+  // 🟢 Verificar ofertas activas en LinkedIn Jobs
+  const checkActiveJobsLinkedIn = (companyName) => {
+    const query = encodeURIComponent(`${companyName} Valencia`)
+    window.open(`https://www.linkedin.com/jobs/search/?keywords=${query}&location=Valencia%2C+Spain&f_TPR=r604800`, '_blank')
+  }
+
+  // ✉️ Abrir modal de generador de carta
+  const openCoverLetter = (company) => {
+    setCoverLetterCompany(company)
+    setShowCoverLetterModal(true)
+    setActiveDropdownId(null)
+  }
+
+  // Datos Kanban agrupados por estado
+  const kanbanColumns = [
+    { key: 'Pendiente', label: 'Pendiente', color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1' },
+    { key: 'Investigando', label: 'Investigando', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' },
+    { key: 'CV Enviado', label: 'CV Enviado', color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd' },
+    { key: 'En proceso', label: 'En proceso', color: '#d97706', bg: '#fffbeb', border: '#fcd34d' },
+    { key: 'Entrevista', label: 'Entrevista', color: '#059669', bg: '#ecfdf5', border: '#6ee7b7' },
+    { key: 'Oferta', label: 'Oferta recibida', color: '#16a34a', bg: '#f0fdf4', border: '#86efac' },
+    { key: 'Rechazado', label: 'Rechazado', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
+    { key: 'Descartado', label: 'Descartado', color: '#94a3b8', bg: '#f8fafc', border: '#e2e8f0' }
+  ]
+
+  // Zonas del mapa con coordenadas aproximadas relativas (para la vista de mapa estática)
+  const ZONE_COORDS = {
+    'Calle Colón': { x: 48, y: 52, label: 'Calle Colón' },
+    'Plaza del Ayuntamiento': { x: 44, y: 58, label: 'Ayuntamiento' },
+    'Alameda': { x: 60, y: 42, label: 'Alameda' },
+    'Cortes Valencianas / Palacio de Congresos': { x: 72, y: 30, label: 'P. Congresos' },
+    'Ruzafa': { x: 50, y: 65, label: 'Ruzafa' },
+    'El Carmen': { x: 38, y: 50, label: 'El Carmen' },
+    'Ciudad de las Artes': { x: 68, y: 70, label: 'Artes' },
+    'Benimaclet': { x: 62, y: 28, label: 'Benimaclet' },
+    'Patraix': { x: 30, y: 65, label: 'Patraix' },
+    'Av. del Puerto': { x: 72, y: 52, label: 'Puerto' }
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg, #f0f4f8)' }}>
       {/* Toast Notification */}
@@ -511,7 +569,40 @@ export default function DirectorioPage() {
 
       {/* CONTENIDO PRINCIPAL */}
       <main style={{ flex: 1, padding: '24px 16px 60px', maxWidth: 1480, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-        
+
+        {/* ── PESTAÑAS PRINCIPALES ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 20, borderBottom: '2px solid #e2e8f0', paddingBottom: 0 }}>
+          {[
+            { key: 'directorio', label: '📋 Directorio', title: 'Lista y cuadrícula de empresas' },
+            { key: 'kanban', label: '🗂️ Pipeline Kanban', title: 'Ver candidaturas por etapa' },
+            { key: 'mapa', label: '🗺️ Mapa Valencia', title: 'Ver empresas geolocalizadas por zona' }
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              title={tab.title}
+              style={{
+                padding: '8px 16px',
+                border: 'none',
+                background: 'none',
+                borderBottom: activeTab === tab.key ? '2px solid #2563eb' : '2px solid transparent',
+                marginBottom: -2,
+                color: activeTab === tab.key ? '#2563eb' : '#64748b',
+                fontWeight: activeTab === tab.key ? 700 : 500,
+                fontSize: 13,
+                cursor: 'pointer',
+                transition: 'color 0.15s',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#94a3b8', paddingBottom: 8 }}>
+            {filteredCompanies.length} empresa{filteredCompanies.length !== 1 ? 's' : ''} visible{filteredCompanies.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+
         {/* Banner de Presentación */}
         <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>
@@ -1038,6 +1129,183 @@ export default function DirectorioPage() {
           </div>
         </div>
 
+        {/* ── VISTA KANBAN ── */}
+        {activeTab === 'kanban' && (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 16, alignItems: 'flex-start' }}>
+              {kanbanColumns.map((col) => {
+                const colCompanies = companies.filter((c) => (c.status || 'Pendiente') === col.key)
+                return (
+                  <div
+                    key={col.key}
+                    style={{
+                      minWidth: 200,
+                      maxWidth: 240,
+                      flex: '0 0 210px',
+                      background: col.bg,
+                      border: `1.5px solid ${col.border}`,
+                      borderRadius: 14,
+                      padding: '12px 10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8
+                    }}
+                  >
+                    {/* Cabecera columna */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: col.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{col.label}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: col.color, background: '#ffffff', borderRadius: 99, padding: '1px 7px', border: `1px solid ${col.border}` }}>{colCompanies.length}</span>
+                    </div>
+                    {/* Tarjetas */}
+                    {colCompanies.length === 0 ? (
+                      <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', padding: '16px 8px', borderRadius: 8, border: '1px dashed #e2e8f0', background: '#ffffff' }}>Sin empresas</div>
+                    ) : colCompanies.map((company) => (
+                      <div
+                        key={company.id}
+                        style={{
+                          background: '#ffffff',
+                          borderRadius: 10,
+                          padding: '10px 12px',
+                          border: company.isFavorite ? '1.5px solid #fde68a' : '1px solid #e2e8f0',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 6
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 }}>
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', lineHeight: 1.3 }}>
+                              {company.isFavorite && '⭐ '}{company.name}
+                            </div>
+                            <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>📍 {company.zone || 'Valencia'}</div>
+                          </div>
+                          <select
+                            value={company.status || 'Pendiente'}
+                            onChange={(e) => handleStatusChange(company.id, e.target.value)}
+                            style={{
+                              padding: '2px 4px',
+                              borderRadius: 6,
+                              border: `1px solid ${col.border}`,
+                              background: col.bg,
+                              color: col.color,
+                              fontSize: 9,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              outline: 'none',
+                              flexShrink: 0
+                            }}
+                          >
+                            {COMPANY_STATUSES.map((s) => (
+                              <option key={s.label} value={s.label}>{s.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {/* Acciones rápidas en kanban */}
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          {company.careersUrl && (
+                            <a href={company.careersUrl.startsWith('http') ? company.careersUrl : `https://${company.careersUrl}`} target="_blank" rel="noopener noreferrer"
+                              style={{ fontSize: 9, padding: '2px 6px', background: '#eff6ff', color: '#2563eb', borderRadius: 4, textDecoration: 'none', fontWeight: 700 }}
+                              title="Portal de empleo">🔗 Careers</a>
+                          )}
+                          {company.email && (
+                            <a href={`mailto:${company.email}`}
+                              style={{ fontSize: 9, padding: '2px 6px', background: '#ecfdf5', color: '#059669', borderRadius: 4, textDecoration: 'none', fontWeight: 700 }}
+                              title="Enviar email">✉️ Email</a>
+                          )}
+                          <button onClick={() => checkActiveJobsLinkedIn(company.name)}
+                            style={{ fontSize: 9, padding: '2px 6px', background: '#f0f9ff', color: '#0369a1', borderRadius: 4, border: 'none', cursor: 'pointer', fontWeight: 700 }}
+                            title="Ver ofertas activas">🟢 Ofertas</button>
+                          <button onClick={() => openCoverLetter(company)}
+                            style={{ fontSize: 9, padding: '2px 6px', background: '#faf5ff', color: '#7c3aed', borderRadius: 4, border: 'none', cursor: 'pointer', fontWeight: 700 }}
+                            title="Generar carta de presentación">✉️ Carta</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── VISTA MAPA VALENCIA ── */}
+        {activeTab === 'mapa' && (
+          <div style={{ background: '#ffffff', borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>🗺️ Mapa de Zonas — Valencia</h3>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>Empresas agrupadas por zona neurálgica. Haz clic en una zona para ver el listado.</p>
+              </div>
+              <a
+                href={`https://www.google.com/maps/search/empresas+abogados+valencia/@39.4699,-0.3763,14z`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: '#2563eb', color: '#fff', textDecoration: 'none', fontSize: 12, fontWeight: 700 }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Abrir en Google Maps
+              </a>
+            </div>
+            {/* Mapa conceptual de zonas */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, padding: 20 }}>
+              {Object.entries(
+                companies.reduce((acc, c) => {
+                  const z = c.zone || 'Otras'
+                  if (!acc[z]) acc[z] = []
+                  acc[z].push(c)
+                  return acc
+                }, {})
+              ).sort((a, b) => b[1].length - a[1].length).map(([zone, zoneCompanies]) => {
+                const dreamCount = zoneCompanies.filter(c => c.isFavorite).length
+                const sentCount = zoneCompanies.filter(c => ['CV Enviado', 'En proceso', 'Entrevista', 'Oferta'].includes(c.status)).length
+                return (
+                  <div
+                    key={zone}
+                    style={{
+                      background: '#f8fafc',
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: 12,
+                      padding: '14px 16px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 12px rgba(37,99,235,0.12)'; e.currentTarget.style.borderColor = '#93c5fd' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#e2e8f0' }}
+                    onClick={() => { setSelectedZone(zone); setActiveTab('directorio') }}
+                    title={`Ver las ${zoneCompanies.length} empresas de ${zone}`}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: '#1e293b' }}>📍 {zone}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: '#2563eb', background: '#eff6ff', borderRadius: 99, padding: '1px 8px' }}>{zoneCompanies.length}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {dreamCount > 0 && (
+                        <span style={{ fontSize: 10, color: '#b45309', background: '#fef3c7', borderRadius: 6, padding: '2px 6px', fontWeight: 700 }}>⭐ {dreamCount} soñadas</span>
+                      )}
+                      {sentCount > 0 && (
+                        <span style={{ fontSize: 10, color: '#7c3aed', background: '#f5f3ff', borderRadius: 6, padding: '2px 6px', fontWeight: 700 }}>📨 {sentCount} en curso</span>
+                      )}
+                    </div>
+                    <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                      {zoneCompanies.slice(0, 5).map((c) => (
+                        <span key={c.id} style={{ fontSize: 9, color: '#475569', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: 90, textOverflow: 'ellipsis' }} title={c.name}>{c.name}</span>
+                      ))}
+                      {zoneCompanies.length > 5 && (
+                        <span style={{ fontSize: 9, color: '#94a3b8', padding: '1px 4px' }}>+{zoneCompanies.length - 5} más</span>
+                      )}
+                    </div>
+                    <div style={{ marginTop: 10, fontSize: 10, color: '#2563eb', fontWeight: 600 }}>Clic para filtrar →</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── VISTA DIRECTORIO (Filtros + Tabla/Grid) — solo visible en pestaña directorio ── */}
+        {activeTab === 'directorio' && (<>
+
         {/* TABLA DE EMPRESAS CON DRAG & DROP Y MENÚ 3 PUNTITOS */}
         <div
           style={{
@@ -1369,6 +1637,78 @@ export default function DirectorioPage() {
                                     <span>🔍</span> Buscar Careers en Google
                                   </button>
 
+                                  {/* Opción 7: Buscar Decisor en LinkedIn */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      searchDecisionMakerLinkedIn(company.name)
+                                      setActiveDropdownId(null)
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 8,
+                                      padding: '8px 10px',
+                                      borderRadius: 6,
+                                      border: 'none',
+                                      background: 'transparent',
+                                      color: '#0a66c2',
+                                      fontSize: 12,
+                                      fontWeight: 500,
+                                      cursor: 'pointer',
+                                      textAlign: 'left'
+                                    }}
+                                  >
+                                    <span>👤</span> Buscar Decisor LinkedIn
+                                  </button>
+
+                                  {/* Opción 8: Ver ofertas activas */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      checkActiveJobsLinkedIn(company.name)
+                                      setActiveDropdownId(null)
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 8,
+                                      padding: '8px 10px',
+                                      borderRadius: 6,
+                                      border: 'none',
+                                      background: 'transparent',
+                                      color: '#059669',
+                                      fontSize: 12,
+                                      fontWeight: 500,
+                                      cursor: 'pointer',
+                                      textAlign: 'left'
+                                    }}
+                                  >
+                                    <span>🟢</span> Ver ofertas activas
+                                  </button>
+
+                                  {/* Opción 9: Generar carta de presentación */}
+                                  <button
+                                    type="button"
+                                    onClick={() => openCoverLetter(company)}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 8,
+                                      padding: '8px 10px',
+                                      borderRadius: 6,
+                                      border: 'none',
+                                      background: 'transparent',
+                                      color: '#7c3aed',
+                                      fontSize: 12,
+                                      fontWeight: 500,
+                                      cursor: 'pointer',
+                                      textAlign: 'left'
+                                    }}
+                                  >
+                                    <span>✉️</span> Generar carta / mensaje
+                                  </button>
+
                                   <div style={{ height: 1, background: '#e2e8f0', margin: '4px 0' }} />
 
                                   {/* Opción 7: Eliminar */}
@@ -1635,36 +1975,49 @@ export default function DirectorioPage() {
                           )}
                         </td>
 
-                        {/* Contacto */}
-                        <td style={{ padding: tableDensity === 'compact' ? '8px 8px' : '14px 18px', verticalAlign: 'top', width: tableDensity === 'compact' ? 90 : 150 }}>
-                          {company.contactUrl ? (
-                            <a
-                              href={company.contactUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 3,
-                                padding: tableDensity === 'compact' ? '3px 7px' : '4px 10px',
-                                borderRadius: 6,
-                                background: '#f5f3ff',
-                                color: '#7c3aed',
-                                textDecoration: 'none',
-                                fontWeight: 600,
-                                fontSize: tableDensity === 'compact' ? 10 : 11
-                              }}
-                            >
-                              <span>Contacto</span>
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                                <polyline points="15 3 21 3 21 9" />
-                                <line x1="10" y1="14" x2="21" y2="3" />
-                              </svg>
-                            </a>
-                          ) : (
-                            <span style={{ fontSize: 10, color: '#94a3b8' }}>-</span>
-                          )}
+                        {/* Contacto + Decisor + Ofertas + Carta */}
+                        <td style={{ padding: tableDensity === 'compact' ? '8px 8px' : '14px 18px', verticalAlign: 'top', width: tableDensity === 'compact' ? 110 : 170 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {company.contactUrl ? (
+                              <a
+                                href={company.contactUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 3,
+                                  padding: tableDensity === 'compact' ? '3px 7px' : '4px 10px',
+                                  borderRadius: 6,
+                                  background: '#f5f3ff',
+                                  color: '#7c3aed',
+                                  textDecoration: 'none',
+                                  fontWeight: 600,
+                                  fontSize: tableDensity === 'compact' ? 10 : 11
+                                }}
+                              >
+                                👤 Contacto
+                              </a>
+                            ) : null}
+                            {/* Acciones de outreach rápidas */}
+                            <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                              <button
+                                onClick={() => searchDecisionMakerLinkedIn(company.name)}
+                                title="Buscar reclutador / decisor en LinkedIn"
+                                style={{ fontSize: tableDensity === 'compact' ? 9 : 10, padding: '2px 5px', borderRadius: 4, border: 'none', background: '#e0f2fe', color: '#0369a1', cursor: 'pointer', fontWeight: 700 }}
+                              >👤 Decisor</button>
+                              <button
+                                onClick={() => checkActiveJobsLinkedIn(company.name)}
+                                title="Ver ofertas activas esta semana en LinkedIn"
+                                style={{ fontSize: tableDensity === 'compact' ? 9 : 10, padding: '2px 5px', borderRadius: 4, border: 'none', background: '#dcfce7', color: '#16a34a', cursor: 'pointer', fontWeight: 700 }}
+                              >🟢 Activa</button>
+                              <button
+                                onClick={() => openCoverLetter(company)}
+                                title="Generar carta de presentación o mensaje"
+                                style={{ fontSize: tableDensity === 'compact' ? 9 : 10, padding: '2px 5px', borderRadius: 4, border: 'none', background: '#faf5ff', color: '#7c3aed', cursor: 'pointer', fontWeight: 700 }}
+                              >✉️ Carta</button>
+                            </div>
+                          </div>
                         </td>
 
                         {/* Estado */}
@@ -2113,6 +2466,8 @@ export default function DirectorioPage() {
           )}
         </div>
 
+        </>) /* fin activeTab === 'directorio' */}
+
       </main>
 
       {/* FOOTER */}
@@ -2149,6 +2504,21 @@ export default function DirectorioPage() {
           isOpen={showChangePwdModal}
           onClose={() => setShowChangePwdModal(false)}
           onSuccess={() => showToast('Contraseña actualizada con éxito')}
+        />
+      )}
+
+      {/* ── MODAL: GENERADOR DE CARTA / MENSAJE ───────────────────────── */}
+      {showCoverLetterModal && coverLetterCompany && (
+        <ModalCoverLetter
+          isOpen={showCoverLetterModal}
+          company={coverLetterCompany}
+          onClose={() => {
+            setShowCoverLetterModal(false)
+            setCoverLetterCompany(null)
+          }}
+          onCopy={(text) => {
+            navigator.clipboard.writeText(text).then(() => showToast('✉️ Mensaje copiado al portapapeles'))
+          }}
         />
       )}
     </div>
@@ -2675,6 +3045,186 @@ function ModalChangePassword({ isOpen, onClose, onSuccess }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  )
+}
+
+// ── COMPONENTE: MODAL GENERADOR DE CARTA / MENSAJE ────────────────────
+function ModalCoverLetter({ isOpen, company, onClose, onCopy }) {
+  const [type, setType] = useState('email') // 'email' | 'linkedin'
+  const [yourName, setYourName] = useState('')
+  const [yourRole, setYourRole] = useState('ADE / Administración y Dirección de Empresas')
+  const [customNote, setCustomNote] = useState('')
+
+  if (!isOpen) return null
+
+  const emailTemplate = `Asunto: Candidatura espontánea — ${yourRole || '[Tu Perfil]'}
+
+Estimado/a equipo de Selección de ${company.name},
+
+Me dirijo a ustedes para presentar mi candidatura espontánea para unirme al equipo de ${company.name}${company.zone ? `, con presencia en ${company.zone}, Valencia` : ''}.
+
+Soy ${yourRole || '[Tu perfil profesional]'} con un sólido interés en el sector ${company.sector || 'de su organización'}. Me atrae especialmente la trayectoria y el posicionamiento de ${company.name} en el mercado valenciano, y me gustaría contribuir con mi formación y motivación.
+
+${customNote ? customNote + '\n\n' : ''}Quedo a su disposición para una entrevista o llamada. Adjunto mi CV actualizado.
+
+Un cordial saludo,
+${yourName || '[Tu nombre]'}`
+
+  const linkedinTemplate = `Hola, me llamo ${yourName || '[Tu nombre]'} y soy ${yourRole || '[Tu perfil]'}. He visto la trayectoria de ${company.name} y me gustaría explorar si hay posibilidades de colaboración. ¿Estarían abiertos a revisar mi perfil? ¡Gracias!`
+
+  const currentText = type === 'email' ? emailTemplate : linkedinTemplate
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(15, 23, 42, 0.6)',
+        backdropFilter: 'blur(4px)',
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 620,
+          background: '#ffffff',
+          borderRadius: 20,
+          padding: '28px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          maxHeight: '90vh',
+          overflowY: 'auto'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2 style={{ fontSize: 19, fontWeight: 800, color: '#0f172a', margin: '0 0 2px 0' }}>✉️ Generador de Carta / Mensaje</h2>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Para: <strong>{company.name}</strong>{company.zone ? ` · ${company.zone}` : ''}</p>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#94a3b8', flexShrink: 0 }}>✕</button>
+        </div>
+
+        {/* Tipo de mensaje */}
+        <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: 3, borderRadius: 10, border: '1px solid #e2e8f0', alignSelf: 'flex-start' }}>
+          {[{ key: 'email', label: '📧 Email formal' }, { key: 'linkedin', label: '💼 LinkedIn (corto)' }].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setType(t.key)}
+              style={{
+                padding: '5px 14px',
+                borderRadius: 7,
+                border: 'none',
+                background: type === t.key ? '#2563eb' : 'transparent',
+                color: type === t.key ? '#ffffff' : '#64748b',
+                fontWeight: type === t.key ? 700 : 500,
+                fontSize: 12,
+                cursor: 'pointer'
+              }}
+            >{t.label}</button>
+          ))}
+        </div>
+
+        {/* Campos de personalización */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Tu nombre</label>
+            <input
+              type="text"
+              placeholder="Ej: María García"
+              value={yourName}
+              onChange={(e) => setYourName(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, boxSizing: 'border-box' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Tu perfil / carrera</label>
+            <input
+              type="text"
+              placeholder="Ej: ADE, Derecho, Marketing..."
+              value={yourRole}
+              onChange={(e) => setYourRole(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, boxSizing: 'border-box' }}
+            />
+          </div>
+        </div>
+
+        {type === 'email' && (
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Nota personalizada (opcional)</label>
+            <textarea
+              rows={2}
+              placeholder="Ej: Me llamó la atención vuestro proyecto de expansión internacional..."
+              value={customNote}
+              onChange={(e) => setCustomNote(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical' }}
+            />
+          </div>
+        )}
+
+        {/* Vista previa del mensaje */}
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Vista previa del mensaje</label>
+          <pre
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: 10,
+              padding: '14px 16px',
+              fontSize: 12,
+              color: '#1e293b',
+              fontFamily: 'inherit',
+              whiteSpace: 'pre-wrap',
+              lineHeight: 1.6,
+              margin: 0,
+              maxHeight: 240,
+              overflowY: 'auto'
+            }}
+          >{currentText}</pre>
+        </div>
+
+        {/* Acciones */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => onCopy(currentText)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '10px 20px', borderRadius: 10, border: 'none',
+              background: '#7c3aed', color: '#ffffff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(124,58,237,0.25)'
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copiar al portapapeles
+          </button>
+          {company.email && type === 'email' && (
+            <a
+              href={`mailto:${company.email}?subject=${encodeURIComponent(`Candidatura espontánea — ${yourRole || 'Mi perfil'}`)}&body=${encodeURIComponent(currentText)}`}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '10px 20px', borderRadius: 10,
+                background: '#2563eb', color: '#ffffff', textDecoration: 'none', fontWeight: 700, fontSize: 13,
+                boxShadow: '0 2px 8px rgba(37,99,235,0.25)'
+              }}
+            >
+              📤 Abrir en cliente de email
+            </a>
+          )}
+          <button
+            onClick={onClose}
+            style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#64748b', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+          >Cerrar</button>
+        </div>
       </div>
     </div>
   )
