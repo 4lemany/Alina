@@ -294,3 +294,136 @@ p, li, textarea, .chat-bubble, [style*="whiteSpace: pre-wrap"], [style*="lineHei
   grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
 }
 
+/* ── Responsive: Mobile (max 640px) ──────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Header: stack logo + acciones en columna */
+  header > div {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+
+  /* Ocultar botones de menos prioridad en cabecera */
+  header .btn-header-secondary {
+    display: none !important;
+  }
+
+  /* Main: padding lateral reducido */
+  main {
+    padding: 16px 10px 48px !important;
+  }
+
+  /* Pestañas principales: scroll horizontal sin corte */
+  [data-tabs-bar] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Banner: solo texto apilado */
+  main > div:first-of-type {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  /* KPI cards: 2 por fila */
+  main [style*="repeat(auto-fit"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Barra de filtros: apilada */
+  main [style*="display: flex"][style*="flexWrap: wrap"] {
+    flex-direction: column !important;
+  }
+
+  /* H1 de la página */
+  h1 {
+    font-size: 20px !important;
+  }
+}
+
+/* ── Responsive: Tablet (641–900px) ─────────────────────────────── */
+@media (min-width: 641px) and (max-width: 900px) {
+  main {
+    padding: 20px 14px 52px !important;
+  }
+
+  h1 {
+    font-size: 22px !important;
+  }
+}
+
+/* ── Directorio: reglas específicas móvil ────────────────────────── */
+
+/* Header del directorio — botones de cabecera wrap en móvil */
+@media (max-width: 640px) {
+  /* Contenedor principal del header */
+  header > div > div:last-child {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  /* Título del directorio: fuente pequeña */
+  header span[style*="fontWeight: 800"] {
+    font-size: 14px !important;
+  }
+
+  /* Banner de acciones (botones añadir, exportar, etc.) — ocultar secundarios */
+  main > div:first-child > div:last-child {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  /* Chips de filtros rápidos: scroll horizontal */
+  main [style*="borderTop: '1px solid #f1f5f9'"] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    padding-bottom: 4px;
+  }
+
+  /* Selector de vista (Lista / Casillas) — empujar al lado */
+  main [style*="marginLeft: 'auto'"] {
+    margin-left: 0 !important;
+    margin-top: 6px;
+  }
+
+  /* Pestañas de navegación (Directorio / Kanban / Mapa) */
+  [style*="borderBottom: '2px solid #e2e8f0'"] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Botones de la cabecera del header: texto oculto, solo icono */
+  header button span {
+    display: none !important;
+  }
+
+  /* Tabla: ocultar columnas no críticas */
+  /* (La tabla ya usa layout compact, dejamos que haga scroll si es necesario) */
+  table {
+    font-size: 11px !important;
+  }
+
+  /* Mapa: 1 columna */
+  [style*="minmax(220px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Modal: padding reducido */
+  [style*="maxWidth: 620"] {
+    padding: 18px 14px !important;
+  }
+
+  /* Grid de casillas: forzar 1 columna en móvil */
+  [style*="repeat(auto-fill, minmax(310"] {
+    grid-template-columns: 1fr !important;
+  }
+  [style*="repeat(auto-fill, minmax(185"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  [style*="repeat(auto-fill, minmax(125"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}

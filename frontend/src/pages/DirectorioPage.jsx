@@ -448,7 +448,7 @@ export default function DirectorioPage() {
 
       {/* HEADER SUPERIOR */}
       <header style={{ background: 'var(--blue, #2563eb)', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
-        <div style={{ maxWidth: 1480, margin: '0 auto', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1480, margin: '0 auto', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           {/* Logo y Titular */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <button
@@ -486,7 +486,7 @@ export default function DirectorioPage() {
           </div>
 
           {/* Acciones de Cabecera */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <button
               onClick={() => {
                 setEditingCompany(null)
@@ -496,7 +496,7 @@ export default function DirectorioPage() {
                 background: '#ffffff',
                 color: '#2563eb',
                 border: 'none',
-                padding: '7px 14px',
+                padding: '7px 12px',
                 borderRadius: '8px',
                 fontSize: 12,
                 fontWeight: 700,
@@ -504,7 +504,8 @@ export default function DirectorioPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
-                boxShadow: '0 2px 6px rgba(0,0,0,0.12)'
+                boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+                whiteSpace: 'nowrap'
               }}
               title="Añadir una nueva empresa rellenando los campos"
             >
@@ -568,10 +569,10 @@ export default function DirectorioPage() {
       </header>
 
       {/* CONTENIDO PRINCIPAL */}
-      <main style={{ flex: 1, padding: '24px 16px 60px', maxWidth: 1480, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+      <main style={{ flex: 1, padding: '20px 12px 60px', maxWidth: 1480, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
 
         {/* ── PESTAÑAS PRINCIPALES ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 20, borderBottom: '2px solid #e2e8f0', paddingBottom: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 20, borderBottom: '2px solid #e2e8f0', paddingBottom: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {[
             { key: 'directorio', label: '📋 Directorio', title: 'Lista y cuadrícula de empresas' },
             { key: 'kanban', label: '🗂️ Pipeline Kanban', title: 'Ver candidaturas por etapa' },
@@ -724,7 +725,7 @@ export default function DirectorioPage() {
         </div>
 
         {/* Tarjetas de Métricas / KPI */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
           <div style={{ background: '#ffffff', borderRadius: 14, padding: '16px 18px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
             <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Empresas</p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
