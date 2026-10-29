@@ -76,6 +76,7 @@ export default function DirectorioPage() {
   // Modo de visualización: 'list' (tabla) o 'grid' (casillas estilo Drive: 3, 6 o 9 por fila)
   const [viewMode, setViewMode] = useState('list') // 'list' | 'grid'
   const [gridColumns, setGridColumns] = useState(3) // 3 | 6 | 9
+  const [tableDensity, setTableDensity] = useState('compact') // 'compact' | 'normal'
 
   // Estado del menú desplegable de 3 puntitos
   const [activeDropdownId, setActiveDropdownId] = useState(null)
@@ -389,7 +390,7 @@ export default function DirectorioPage() {
 
       {/* HEADER SUPERIOR */}
       <header style={{ background: 'var(--blue, #2563eb)', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1480, margin: '0 auto', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Logo y Titular */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <button
@@ -509,7 +510,7 @@ export default function DirectorioPage() {
       </header>
 
       {/* CONTENIDO PRINCIPAL */}
-      <main style={{ flex: 1, padding: '28px 24px 60px', maxWidth: 1280, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+      <main style={{ flex: 1, padding: '24px 16px 60px', maxWidth: 1480, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         
         {/* Banner de Presentación */}
         <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
@@ -940,6 +941,47 @@ export default function DirectorioPage() {
                 </button>
               </div>
 
+              {/* Si está en modo Lista, permitir elegir densidad de fila (Compacta vs Normal) */}
+              {viewMode === 'list' && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f8fafc', padding: '2px 6px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Tamaño:</span>
+                  <button
+                    type="button"
+                    onClick={() => setTableDensity('compact')}
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: 5,
+                      border: 'none',
+                      background: tableDensity === 'compact' ? '#2563eb' : 'transparent',
+                      color: tableDensity === 'compact' ? '#ffffff' : '#64748b',
+                      fontWeight: 700,
+                      fontSize: 11,
+                      cursor: 'pointer'
+                    }}
+                    title="Filas compactas con texto adaptado para ver la fila completa sin desplazarse"
+                  >
+                    Ajustado (Sin Scroll)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTableDensity('normal')}
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: 5,
+                      border: 'none',
+                      background: tableDensity === 'normal' ? '#2563eb' : 'transparent',
+                      color: tableDensity === 'normal' ? '#ffffff' : '#64748b',
+                      fontWeight: 700,
+                      fontSize: 11,
+                      cursor: 'pointer'
+                    }}
+                    title="Tamaño normal de filas"
+                  >
+                    Normal
+                  </button>
+                </div>
+              )}
+
               {/* Si está en modo Casillas / Cuadrícula, permitir elegir 3, 6 o 9 por fila */}
               {viewMode === 'grid' && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f8fafc', padding: '2px 6px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
@@ -1035,28 +1077,19 @@ export default function DirectorioPage() {
               </button>
             </div>
           ) : viewMode === 'list' ? (
-            <div className="directorio-scrollable-container" style={{ overflowX: 'auto', overflowY: 'visible', width: '100%' }}>
-              {/* Barra indicadora de scroll para ayudar al usuario a ver que hay más contenido hacia la derecha */}
-              <div style={{ padding: '6px 16px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#64748b' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>↔️</span> Desplaza hacia la derecha para ver contacto, estado, notas y opciones
-                </span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>
-                  {filteredCompanies.length} empresas mostradas
-                </span>
-              </div>
-              <table style={{ width: '100%', minWidth: 1180, borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+            <div style={{ overflowX: tableDensity === 'compact' ? 'hidden' : 'auto', overflowY: 'visible', width: '100%' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: tableDensity === 'compact' ? 12 : 13, tableLayout: 'auto' }}>
                 <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    <th style={{ padding: '14px 14px', fontWeight: 700, width: 60, textAlign: 'center' }}>#</th>
-                    <th style={{ padding: '14px 18px', fontWeight: 700, minWidth: 260 }}>Empresa / Despacho</th>
-                    <th style={{ padding: '14px 18px', fontWeight: 700 }}>Zona & Sector</th>
-                    <th style={{ padding: '14px 18px', fontWeight: 700 }}>Apartado Careers</th>
-                    <th style={{ padding: '14px 18px', fontWeight: 700 }}>Talent Acquisition / Email</th>
-                    <th style={{ padding: '14px 18px', fontWeight: 700 }}>Contacto</th>
-                    <th style={{ padding: '14px 18px', fontWeight: 700 }}>Estado</th>
-                    <th style={{ padding: '14px 18px', fontWeight: 700 }}>Notas</th>
-                    <th style={{ padding: '14px 18px', fontWeight: 700, textAlign: 'right' }}>Opciones</th>
+                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <th style={{ padding: tableDensity === 'compact' ? '10px 8px' : '14px 14px', fontWeight: 700, width: 36, textAlign: 'center' }}>#</th>
+                    <th style={{ padding: tableDensity === 'compact' ? '10px 10px' : '14px 18px', fontWeight: 700 }}>Empresa / Despacho</th>
+                    <th style={{ padding: tableDensity === 'compact' ? '10px 10px' : '14px 18px', fontWeight: 700 }}>Zona & Sector</th>
+                    <th style={{ padding: tableDensity === 'compact' ? '10px 10px' : '14px 18px', fontWeight: 700 }}>Careers</th>
+                    <th style={{ padding: tableDensity === 'compact' ? '10px 10px' : '14px 18px', fontWeight: 700 }}>Talent / Email</th>
+                    <th style={{ padding: tableDensity === 'compact' ? '10px 10px' : '14px 18px', fontWeight: 700 }}>Contacto</th>
+                    <th style={{ padding: tableDensity === 'compact' ? '10px 10px' : '14px 18px', fontWeight: 700 }}>Estado</th>
+                    <th style={{ padding: tableDensity === 'compact' ? '10px 10px' : '14px 18px', fontWeight: 700 }}>Notas</th>
+                    <th style={{ padding: tableDensity === 'compact' ? '10px 10px' : '14px 18px', fontWeight: 700, textAlign: 'right' }}>Opciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1087,19 +1120,19 @@ export default function DirectorioPage() {
                         }}
                       >
                         {/* Enumeración / Prioridad */}
-                        <td style={{ padding: '14px 14px', verticalAlign: 'top', textAlign: 'center', width: 60 }}>
+                        <td style={{ padding: tableDensity === 'compact' ? '8px 4px' : '14px 14px', verticalAlign: 'top', textAlign: 'center', width: tableDensity === 'compact' ? 36 : 60 }}>
                           <span
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              minWidth: 26,
-                              height: 24,
-                              padding: '0 6px',
+                              minWidth: tableDensity === 'compact' ? 22 : 26,
+                              height: tableDensity === 'compact' ? 20 : 24,
+                              padding: '0 4px',
                               borderRadius: 99,
                               background: company.isFavorite ? '#fef3c7' : '#f1f5f9',
                               color: company.isFavorite ? '#b45309' : '#64748b',
-                              fontSize: 12,
+                              fontSize: tableDensity === 'compact' ? 11 : 12,
                               fontWeight: 700
                             }}
                             title={`Prioridad #${index + 1} en tu lista`}
@@ -1108,7 +1141,7 @@ export default function DirectorioPage() {
                           </span>
                         </td>
                         {/* Nombre, Drag Handle, Estrella y Desplegable */}
-                        <td style={{ padding: '14px 18px', verticalAlign: 'top', minWidth: 260, position: 'relative' }}>
+                        <td style={{ padding: tableDensity === 'compact' ? '8px 10px' : '14px 18px', verticalAlign: 'top', position: 'relative' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                             {/* Drag Handle */}
                             <span
@@ -1399,30 +1432,30 @@ export default function DirectorioPage() {
                         </td>
 
                         {/* Zona y Sector */}
-                        <td style={{ padding: '14px 18px', verticalAlign: 'top', minWidth: 160 }}>
+                        <td style={{ padding: tableDensity === 'compact' ? '8px 8px' : '14px 18px', verticalAlign: 'top', width: tableDensity === 'compact' ? 140 : 160 }}>
                           <div
                             style={{
                               display: 'inline-block',
-                              padding: '2px 8px',
+                              padding: tableDensity === 'compact' ? '2px 6px' : '2px 8px',
                               borderRadius: 6,
-                              fontSize: 11,
+                              fontSize: tableDensity === 'compact' ? 10 : 11,
                               fontWeight: 700,
                               background: '#eff6ff',
                               color: '#1d4ed8',
-                              marginBottom: 4
+                              marginBottom: 2
                             }}
                           >
                             {company.zone || 'Valencia'}
                           </div>
                           {company.sector && (
-                            <div style={{ fontSize: 11, color: '#64748b' }}>{company.sector}</div>
+                            <div style={{ fontSize: tableDensity === 'compact' ? 10 : 11, color: '#64748b', lineHeight: 1.25 }}>{company.sector}</div>
                           )}
                         </td>
 
                         {/* Apartado Careers */}
-                        <td style={{ padding: '14px 18px', verticalAlign: 'top', minWidth: 190 }}>
+                        <td style={{ padding: tableDensity === 'compact' ? '8px 8px' : '14px 18px', verticalAlign: 'top', width: tableDensity === 'compact' ? 120 : 190 }}>
                           {company.careersUrl && company.careersUrl.trim() ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
                               <a
                                 href={company.careersUrl.startsWith('http') ? company.careersUrl : `https://${company.careersUrl}`}
                                 target="_blank"
@@ -1430,18 +1463,18 @@ export default function DirectorioPage() {
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 5,
-                                  padding: '4px 10px',
+                                  gap: 4,
+                                  padding: tableDensity === 'compact' ? '3px 7px' : '4px 10px',
                                   borderRadius: 6,
                                   background: '#eff6ff',
                                   color: '#2563eb',
                                   textDecoration: 'none',
                                   fontWeight: 600,
-                                  fontSize: 12
+                                  fontSize: tableDensity === 'compact' ? 11 : 12
                                 }}
                               >
-                                <span>Ver Portal</span>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <span>Portal</span>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                                   <polyline points="15 3 21 3 21 9" />
                                   <line x1="10" y1="14" x2="21" y2="3" />
@@ -1454,41 +1487,41 @@ export default function DirectorioPage() {
                                 style={{
                                   background: 'none',
                                   border: 'none',
-                                  padding: 4,
+                                  padding: 2,
                                   cursor: 'pointer',
                                   color: '#94a3b8'
                                 }}
                               >
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                                 </svg>
                               </button>
                             </div>
                           ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                               <button
                                 onClick={() => searchCareersGoogle(company.name)}
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 4,
-                                  padding: '4px 8px',
-                                  borderRadius: 6,
+                                  gap: 3,
+                                  padding: tableDensity === 'compact' ? '2px 6px' : '4px 8px',
+                                  borderRadius: 5,
                                   background: '#f8fafc',
                                   border: '1px dashed #cbd5e1',
                                   color: '#475569',
-                                  fontSize: 11,
+                                  fontSize: tableDensity === 'compact' ? 10 : 11,
                                   fontWeight: 600,
                                   cursor: 'pointer'
                                 }}
                                 title="Buscar página de empleo en Google en 1 clic"
                               >
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <circle cx="11" cy="11" r="8" />
                                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                                 </svg>
-                                Buscar en Google
+                                Buscar
                               </button>
 
                               <button
@@ -1500,34 +1533,39 @@ export default function DirectorioPage() {
                                   background: 'none',
                                   border: 'none',
                                   color: '#2563eb',
-                                  fontSize: 11,
+                                  fontSize: tableDensity === 'compact' ? 10 : 11,
                                   cursor: 'pointer',
                                   textDecoration: 'underline'
                                 }}
                               >
-                                + Añadir
+                                +
                               </button>
                             </div>
                           )}
                         </td>
 
                         {/* Email Talent Acquisition */}
-                        <td style={{ padding: '14px 18px', verticalAlign: 'top', minWidth: 200 }}>
+                        <td style={{ padding: tableDensity === 'compact' ? '8px 8px' : '14px 18px', verticalAlign: 'top', width: tableDensity === 'compact' ? 140 : 200 }}>
                           {company.email && company.email.trim() ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
                               <a
                                 href={`mailto:${company.email}`}
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 5,
+                                  gap: 4,
                                   color: '#0f172a',
                                   textDecoration: 'none',
                                   fontWeight: 600,
-                                  fontSize: 12
+                                  fontSize: tableDensity === 'compact' ? 11 : 12,
+                                  maxWidth: tableDensity === 'compact' ? 115 : 170,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
                                 }}
+                                title={company.email}
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2">
                                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                                   <polyline points="22,6 12,13 2,6" />
                                 </svg>
@@ -1540,41 +1578,41 @@ export default function DirectorioPage() {
                                 style={{
                                   background: 'none',
                                   border: 'none',
-                                  padding: 4,
+                                  padding: 2,
                                   cursor: 'pointer',
                                   color: '#94a3b8'
                                 }}
                               >
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                                 </svg>
                               </button>
                             </div>
                           ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                               <button
                                 onClick={() => searchEmailGoogle(company.name)}
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: 4,
-                                  padding: '4px 8px',
-                                  borderRadius: 6,
+                                  gap: 3,
+                                  padding: tableDensity === 'compact' ? '2px 6px' : '4px 8px',
+                                  borderRadius: 5,
                                   background: '#f8fafc',
                                   border: '1px dashed #cbd5e1',
                                   color: '#475569',
-                                  fontSize: 11,
+                                  fontSize: tableDensity === 'compact' ? 10 : 11,
                                   fontWeight: 600,
                                   cursor: 'pointer'
                                 }}
                                 title="Buscar correo de talent acquisition o rrhh en Google"
                               >
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <circle cx="11" cy="11" r="8" />
                                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                                 </svg>
-                                Buscar Email
+                                Buscar
                               </button>
 
                               <button
@@ -1586,39 +1624,65 @@ export default function DirectorioPage() {
                                   background: 'none',
                                   border: 'none',
                                   color: '#2563eb',
-                                  fontSize: 11,
+                                  fontSize: tableDensity === 'compact' ? 10 : 11,
                                   cursor: 'pointer',
                                   textDecoration: 'underline'
                                 }}
                               >
-                                + Añadir
+                                +
                               </button>
                             </div>
                           )}
                         </td>
-                        <td style={{ padding: '14px 18px', verticalAlign: 'top', minWidth: 150 }}>
-                          {company.contactUrl && (
-                            <a href={company.contactUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline' }}>
-                              Ver contacto
+
+                        {/* Contacto */}
+                        <td style={{ padding: tableDensity === 'compact' ? '8px 8px' : '14px 18px', verticalAlign: 'top', width: tableDensity === 'compact' ? 90 : 150 }}>
+                          {company.contactUrl ? (
+                            <a
+                              href={company.contactUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 3,
+                                padding: tableDensity === 'compact' ? '3px 7px' : '4px 10px',
+                                borderRadius: 6,
+                                background: '#f5f3ff',
+                                color: '#7c3aed',
+                                textDecoration: 'none',
+                                fontWeight: 600,
+                                fontSize: tableDensity === 'compact' ? 10 : 11
+                              }}
+                            >
+                              <span>Contacto</span>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                <polyline points="15 3 21 3 21 9" />
+                                <line x1="10" y1="14" x2="21" y2="3" />
+                              </svg>
                             </a>
+                          ) : (
+                            <span style={{ fontSize: 10, color: '#94a3b8' }}>-</span>
                           )}
                         </td>
 
                         {/* Estado */}
-                        <td style={{ padding: '14px 18px', verticalAlign: 'top', minWidth: 140 }}>
+                        <td style={{ padding: tableDensity === 'compact' ? '8px 8px' : '14px 18px', verticalAlign: 'top', width: tableDensity === 'compact' ? 110 : 140 }}>
                           <select
                             value={company.status || 'Pendiente'}
                             onChange={(e) => handleStatusChange(company.id, e.target.value)}
                             style={{
-                              padding: '4px 8px',
+                              padding: tableDensity === 'compact' ? '3px 6px' : '4px 8px',
                               borderRadius: 99,
                               border: '1px solid #cbd5e1',
                               background: statusObj.bg,
                               color: statusObj.color,
-                              fontSize: 11,
+                              fontSize: tableDensity === 'compact' ? 10 : 11,
                               fontWeight: 700,
                               cursor: 'pointer',
-                              outline: 'none'
+                              outline: 'none',
+                              maxWidth: '100%'
                             }}
                           >
                             {COMPANY_STATUSES.map((s) => (
@@ -1630,26 +1694,27 @@ export default function DirectorioPage() {
                         </td>
 
                         {/* Notas */}
-                        <td style={{ padding: '14px 18px', verticalAlign: 'top', maxWidth: 220 }}>
+                        <td style={{ padding: tableDensity === 'compact' ? '8px 8px' : '14px 18px', verticalAlign: 'top', maxWidth: tableDensity === 'compact' ? 140 : 220 }}>
                           <div
                             style={{
-                              fontSize: 12,
+                              fontSize: tableDensity === 'compact' ? 11 : 12,
                               color: company.notes ? '#475569' : '#94a3b8',
-                              lineHeight: 1.4,
+                              lineHeight: 1.3,
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               display: '-webkit-box',
                               WebkitLineClamp: 2,
                               WebkitBoxOrient: 'vertical'
                             }}
+                            title={company.notes || ''}
                           >
-                            {company.notes || 'Sin notas'}
+                            {company.notes || '-'}
                           </div>
                         </td>
 
                         {/* Acciones */}
-                        <td style={{ padding: '14px 18px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <td style={{ padding: tableDensity === 'compact' ? '8px 8px' : '14px 18px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap', width: 70 }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
                             {/* Editar */}
                             <button
                               onClick={() => {
@@ -1660,13 +1725,13 @@ export default function DirectorioPage() {
                               style={{
                                 background: '#f1f5f9',
                                 border: 'none',
-                                padding: '6px 8px',
+                                padding: tableDensity === 'compact' ? '4px 6px' : '6px 8px',
                                 borderRadius: 6,
                                 cursor: 'pointer',
                                 color: '#475569'
                               }}
                             >
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M12 20h9" />
                                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                               </svg>
@@ -1679,13 +1744,13 @@ export default function DirectorioPage() {
                               style={{
                                 background: '#fef2f2',
                                 border: 'none',
-                                padding: '6px 8px',
+                                padding: tableDensity === 'compact' ? '4px 6px' : '6px 8px',
                                 borderRadius: 6,
                                 cursor: 'pointer',
                                 color: '#dc2626'
                               }}
                             >
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polyline points="3 6 5 6 21 6" />
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                               </svg>
