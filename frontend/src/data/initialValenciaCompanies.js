@@ -2004,8 +2004,47 @@ export const INITIAL_VALENCIA_COMPANIES = [
     isFavorite: false,
     notes: 'Firma valenciana especializada en headhunting de directivos, perfiles clave y talento tecnológico.',
     updatedAt: '2026-10-28'
-  }
-]
+  },
+  {
+    id: 'generic-iprionics',
+    name: 'IpRionics',
+    zone: 'Calle Colón',
+    address: 'Calle Colón, 10, Valencia',
+    sector: 'Tecnología e Ingeniería',
+    careersUrl: '',
+    email: '',
+    status: 'Pendiente',
+    isFavorite: false,
+    notes: 'Empresa genérica de tecnología.',
+    updatedAt: '2026-10-28'
+  },
+  {
+    id: 'generic-isdin',
+    name: 'Isdin',
+    zone: 'Calle Colón',
+    address: 'Calle Colón, 11, Valencia',
+    sector: 'Cosmética y Cuidado de la Piel',
+    careersUrl: '',
+    email: '',
+    status: 'Pendiente',
+    isFavorite: false,
+    notes: 'Marca de productos dermatológicos.',
+    updatedAt: '2026-10-28'
+  },
+  {
+    id: 'generic-michaelpage',
+    name: 'Michael Page',
+    zone: 'Calle Colón',
+    address: 'Calle Colón, 12, Valencia',
+    sector: 'Reclutamiento y Consultoría de Talento',
+    careersUrl: '',
+    email: '',
+    status: 'Pendiente',
+    isFavorite: false,
+    notes: 'Empresa internacional de búsqueda de ejecutivos.',
+    updatedAt: '2026-10-28'
+  },
+];
 
 export const VALENCIA_ZONES = [
   'Calle Colón',
