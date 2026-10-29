@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { verifyPassword, authorizeSession, DEFAULT_PASSWORD } from '../utils/security'
+import { verifyPassword, authorizeSession } from '../utils/security'
 
 export default function PasswordModal({ isOpen, onClose, onSuccess }) {
   const [password, setPassword] = useState('')
@@ -244,42 +244,7 @@ export default function PasswordModal({ isOpen, onClose, onSuccess }) {
           </div>
         </form>
 
-        {/* Tip / Default Password notice */}
-        <div
-          style={{
-            marginTop: 20,
-            padding: '10px 12px',
-            background: '#f8fafc',
-            border: '1px dashed #cbd5e1',
-            borderRadius: '10px',
-            fontSize: 11,
-            color: '#64748b',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-          }}
-        >
-          <span>
-            Clave inicial: <code style={{ background: '#e2e8f0', padding: '2px 5px', borderRadius: 4, fontWeight: 700, color: '#1e293b' }}>{DEFAULT_PASSWORD}</code>
-          </span>
-          <button
-            type="button"
-            onClick={() => setPassword(DEFAULT_PASSWORD)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#2563eb',
-              fontWeight: 600,
-              fontSize: 11,
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              padding: 0,
-            }}
-          >
-            Autorrellenar
-          </button>
-        </div>
+
       </div>
     </div>
   )

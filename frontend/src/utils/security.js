@@ -1,6 +1,6 @@
 const PWD_STORAGE_KEY = 'alina_valencia_dir_pwd'
 const AUTH_SESSION_KEY = 'alina_valencia_dir_auth'
-export const DEFAULT_PASSWORD = 'alina2026'
+export const DEFAULT_PASSWORD = '9025'
 
 /**
  * Obtiene la contraseña activa (configurada en localStorage, .env o por defecto)

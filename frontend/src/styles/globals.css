@@ -248,3 +248,49 @@ p, li, textarea, .chat-bubble, [style*="whiteSpace: pre-wrap"], [style*="lineHei
   color: rgba(37,99,235,0.04); user-select: none; pointer-events: none;
   position: absolute; letter-spacing: -0.03em;
 }
+
+/* ── Directorio Custom Scrollbars & Grid Helpers ────────────────── */
+.directorio-scrollable-container {
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+.directorio-scrollable-container::-webkit-scrollbar {
+  height: 10px;
+}
+
+.directorio-scrollable-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+
+.directorio-scrollable-container::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 8px;
+  border: 2px solid #f1f5f9;
+}
+
+.directorio-scrollable-container::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+.directorio-grid-container {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.directorio-grid-cols-3 {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.directorio-grid-cols-6 {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.directorio-grid-cols-9 {
+  grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+}
+

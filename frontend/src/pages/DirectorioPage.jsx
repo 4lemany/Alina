@@ -73,6 +73,10 @@ export default function DirectorioPage() {
   const [onlyMissingEmail, setOnlyMissingEmail] = useState(false)
   const [filterOnlyFavorites, setFilterOnlyFavorites] = useState(false)
 
+  // Modo de visualización: 'list' (tabla) o 'grid' (casillas estilo Drive: 3, 6 o 9 por fila)
+  const [viewMode, setViewMode] = useState('list') // 'list' | 'grid'
+  const [gridColumns, setGridColumns] = useState(3) // 3 | 6 | 9
+
   // Estado del menú desplegable de 3 puntitos
   const [activeDropdownId, setActiveDropdownId] = useState(null)
 
@@ -873,8 +877,95 @@ export default function DirectorioPage() {
               <span>✉️</span> Falta Email Talent
             </button>
 
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94a3b8' }}>
-              <span>💡 Puedes arrastrar cada fila con <strong>⠿</strong> para moverla arriba o abajo</span>
+            {/* Controles de visualización estilo Google Drive: Lista vs Casillas (3 / 6 / 9 por fila) */}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b' }}>Vista:</span>
+              <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: 2, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    border: 'none',
+                    background: viewMode === 'list' ? '#ffffff' : 'transparent',
+                    color: viewMode === 'list' ? '#2563eb' : '#64748b',
+                    fontWeight: viewMode === 'list' ? 700 : 500,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                  title="Vista de lista detallada con desplazamiento horizontal"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <line x1="8" y1="6" x2="21" y2="6" />
+                    <line x1="8" y1="12" x2="21" y2="12" />
+                    <line x1="8" y1="18" x2="21" y2="18" />
+                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                  </svg>
+                  Lista
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    border: 'none',
+                    background: viewMode === 'grid' ? '#ffffff' : 'transparent',
+                    color: viewMode === 'grid' ? '#2563eb' : '#64748b',
+                    fontWeight: viewMode === 'grid' ? 700 : 500,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                  title="Vista en casillas compactas (como Google Drive)"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                  </svg>
+                  Casillas
+                </button>
+              </div>
+
+              {/* Si está en modo Casillas / Cuadrícula, permitir elegir 3, 6 o 9 por fila */}
+              {viewMode === 'grid' && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f8fafc', padding: '2px 6px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>Por fila:</span>
+                  {[3, 6, 9].map((cols) => (
+                    <button
+                      key={cols}
+                      type="button"
+                      onClick={() => setGridColumns(cols)}
+                      style={{
+                        padding: '2px 8px',
+                        borderRadius: 5,
+                        border: 'none',
+                        background: gridColumns === cols ? '#2563eb' : 'transparent',
+                        color: gridColumns === cols ? '#ffffff' : '#64748b',
+                        fontWeight: 700,
+                        fontSize: 11,
+                        cursor: 'pointer'
+                      }}
+                      title={`Mostrar ${cols} casillas por fila`}
+                    >
+                      {cols}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {(searchTerm || selectedZone !== 'Todas' || selectedStatus !== 'Todos' || onlyMissingCareers || onlyMissingEmail || filterOnlyFavorites) && (
@@ -943,11 +1034,21 @@ export default function DirectorioPage() {
                 Ver todas las empresas
               </button>
             </div>
-          ) : (
-            <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+          ) : viewMode === 'list' ? (
+            <div className="directorio-scrollable-container" style={{ overflowX: 'auto', overflowY: 'visible', width: '100%' }}>
+              {/* Barra indicadora de scroll para ayudar al usuario a ver que hay más contenido hacia la derecha */}
+              <div style={{ padding: '6px 16px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, color: '#64748b' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>↔️</span> Desplaza hacia la derecha para ver contacto, estado, notas y opciones
+                </span>
+                <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                  {filteredCompanies.length} empresas mostradas
+                </span>
+              </div>
+              <table style={{ width: '100%', minWidth: 1180, borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '14px 14px', fontWeight: 700, width: 60, textAlign: 'center' }}>#</th>
                     <th style={{ padding: '14px 18px', fontWeight: 700, minWidth: 260 }}>Empresa / Despacho</th>
                     <th style={{ padding: '14px 18px', fontWeight: 700 }}>Zona & Sector</th>
                     <th style={{ padding: '14px 18px', fontWeight: 700 }}>Apartado Careers</th>
@@ -985,6 +1086,27 @@ export default function DirectorioPage() {
                           if (!isDragOver && !isBeingDragged) e.currentTarget.style.background = company.isFavorite ? 'rgba(254, 243, 199, 0.25)' : 'transparent'
                         }}
                       >
+                        {/* Enumeración / Prioridad */}
+                        <td style={{ padding: '14px 14px', verticalAlign: 'top', textAlign: 'center', width: 60 }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: 26,
+                              height: 24,
+                              padding: '0 6px',
+                              borderRadius: 99,
+                              background: company.isFavorite ? '#fef3c7' : '#f1f5f9',
+                              color: company.isFavorite ? '#b45309' : '#64748b',
+                              fontSize: 12,
+                              fontWeight: 700
+                            }}
+                            title={`Prioridad #${index + 1} en tu lista`}
+                          >
+                            {index + 1}
+                          </span>
+                        </td>
                         {/* Nombre, Drag Handle, Estrella y Desplegable */}
                         <td style={{ padding: '14px 18px', verticalAlign: 'top', minWidth: 260, position: 'relative' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -1575,6 +1697,353 @@ export default function DirectorioPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+          ) : (
+            /* VISTA EN CASILLAS / DRIVE (3, 6 O 9 POR FILA) */
+            <div style={{ padding: '16px' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    gridColumns === 9
+                      ? 'repeat(auto-fill, minmax(125px, 1fr))'
+                      : gridColumns === 6
+                      ? 'repeat(auto-fill, minmax(185px, 1fr))'
+                      : 'repeat(auto-fill, minmax(310px, 1fr))',
+                  gap: gridColumns === 9 ? 8 : 12
+                }}
+              >
+                {filteredCompanies.map((company, index) => {
+                  const statusObj = COMPANY_STATUSES.find((s) => s.label === company.status) || COMPANY_STATUSES[0]
+                  const isCompact = gridColumns >= 6
+                  const isUltraCompact = gridColumns === 9
+
+                  return (
+                    <div
+                      key={company.id}
+                      draggable={!activeDropdownId}
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                      style={{
+                        background: company.isFavorite ? '#fffdf7' : '#ffffff',
+                        border: company.isFavorite ? '1.5px solid #fde68a' : '1px solid #e2e8f0',
+                        borderRadius: isUltraCompact ? 8 : 12,
+                        padding: isUltraCompact ? '8px' : isCompact ? '12px' : '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: isUltraCompact ? 6 : 10,
+                        position: 'relative',
+                        transition: 'transform 0.15s, box-shadow 0.15s, border-color 0.15s',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        cursor: 'grab'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                        e.currentTarget.style.boxShadow = '0 6px 14px rgba(0,0,0,0.08)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'none'
+                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      {/* Cabecera de la casilla: # Prioridad, Nombre, Favorito y Opciones */}
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 4 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                            <span
+                              style={{
+                                fontSize: isUltraCompact ? 10 : 11,
+                                fontWeight: 800,
+                                color: company.isFavorite ? '#b45309' : '#64748b',
+                                background: company.isFavorite ? '#fef3c7' : '#f1f5f9',
+                                padding: isUltraCompact ? '1px 4px' : '2px 6px',
+                                borderRadius: 6
+                              }}
+                              title={`Prioridad #${index + 1}`}
+                            >
+                              #{index + 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleFavorite(company.id)
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                padding: 0,
+                                cursor: 'pointer',
+                                fontSize: isUltraCompact ? 12 : 14,
+                                lineHeight: 1
+                              }}
+                              title={company.isFavorite ? 'Empresa Soñada (quitar)' : 'Marcar Soñada ⭐'}
+                            >
+                              {company.isFavorite ? '⭐' : '☆'}
+                            </button>
+                          </div>
+
+                          {/* Menú de opciones ⋮ en la casilla */}
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setActiveDropdownId(activeDropdownId === company.id ? null : company.id)
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: '#94a3b8',
+                                fontSize: 13,
+                                fontWeight: 900,
+                                padding: '0 4px',
+                                lineHeight: 1
+                              }}
+                              title="Opciones"
+                            >
+                              ⋮
+                            </button>
+
+                            {activeDropdownId === company.id && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                  position: 'absolute',
+                                  top: 20,
+                                  right: 0,
+                                  zIndex: 9999,
+                                  width: 220,
+                                  background: '#ffffff',
+                                  borderRadius: 10,
+                                  boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                                  border: '1px solid #e2e8f0',
+                                  padding: '6px',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 2
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    toggleFavorite(company.id)
+                                    setActiveDropdownId(null)
+                                  }}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    padding: '6px 8px',
+                                    borderRadius: 6,
+                                    border: 'none',
+                                    background: 'transparent',
+                                    color: '#1e293b',
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    textAlign: 'left'
+                                  }}
+                                >
+                                  <span>{company.isFavorite ? '⭐ Quitar de Soñadas' : '⭐ Marcar Soñada'}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingCompany(company)
+                                    setShowAddEditModal(true)
+                                    setActiveDropdownId(null)
+                                  }}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    padding: '6px 8px',
+                                    borderRadius: 6,
+                                    border: 'none',
+                                    background: 'transparent',
+                                    color: '#1e293b',
+                                    fontSize: 12,
+                                    cursor: 'pointer',
+                                    textAlign: 'left'
+                                  }}
+                                >
+                                  <span>✏️</span> Editar datos
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCompany(company.id, company.name)}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    padding: '6px 8px',
+                                    borderRadius: 6,
+                                    border: 'none',
+                                    background: '#fef2f2',
+                                    color: '#dc2626',
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    textAlign: 'left'
+                                  }}
+                                >
+                                  <span>🗑️</span> Eliminar
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Nombre de la empresa */}
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            fontSize: isUltraCompact ? 12 : isCompact ? 13 : 15,
+                            color: '#0f172a',
+                            lineHeight: 1.3,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                          title={company.name}
+                        >
+                          {company.name}
+                        </div>
+
+                        {/* Zona / Ubicación */}
+                        <div
+                          style={{
+                            fontSize: isUltraCompact ? 10 : 11,
+                            color: '#64748b',
+                            marginTop: 2,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          📍 {company.zone || 'Valencia'}
+                        </div>
+                      </div>
+
+                      {/* Información central (reducida para agilizar la búsqueda rápida) */}
+                      {!isUltraCompact && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: '#475569' }}>
+                          {company.sector && (
+                            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              🏷️ {company.sector}
+                            </div>
+                          )}
+                          {!isCompact && company.address && (
+                            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#64748b' }}>
+                              🏢 {company.address}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Pie de la casilla: Estado y Accesos Rápidos */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 4,
+                          paddingTop: 6,
+                          borderTop: '1px solid #f1f5f9',
+                          flexWrap: isUltraCompact ? 'wrap' : 'nowrap'
+                        }}
+                      >
+                        {/* Selector de Estado compacto */}
+                        <select
+                          value={company.status || 'Pendiente'}
+                          onChange={(e) => handleStatusChange(company.id, e.target.value)}
+                          style={{
+                            padding: isUltraCompact ? '2px 4px' : '3px 6px',
+                            borderRadius: 6,
+                            border: '1px solid #cbd5e1',
+                            background: statusObj.bg,
+                            color: statusObj.color,
+                            fontSize: isUltraCompact ? 9 : 10,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            outline: 'none',
+                            maxWidth: isUltraCompact ? '100%' : '110px'
+                          }}
+                        >
+                          {COMPANY_STATUSES.map((s) => (
+                            <option key={s.label} value={s.label}>
+                              {s.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Enlaces Rápidos (Careers / Email / Contacto) */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {company.careersUrl && (
+                            <a
+                              href={company.careersUrl.startsWith('http') ? company.careersUrl : `https://${company.careersUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                padding: '3px 6px',
+                                borderRadius: 4,
+                                background: '#eff6ff',
+                                color: '#2563eb',
+                                textDecoration: 'none',
+                                fontSize: isUltraCompact ? 9 : 10,
+                                fontWeight: 700
+                              }}
+                              title="Abrir portal de empleo"
+                            >
+                              🔗
+                            </a>
+                          )}
+                          {company.email && (
+                            <a
+                              href={`mailto:${company.email}`}
+                              style={{
+                                padding: '3px 6px',
+                                borderRadius: 4,
+                                background: '#ecfdf5',
+                                color: '#059669',
+                                textDecoration: 'none',
+                                fontSize: isUltraCompact ? 9 : 10,
+                                fontWeight: 700
+                              }}
+                              title={`Enviar email a ${company.email}`}
+                            >
+                              ✉️
+                            </a>
+                          )}
+                          {company.contactUrl && (
+                            <a
+                              href={company.contactUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                padding: '3px 6px',
+                                borderRadius: 4,
+                                background: '#f5f3ff',
+                                color: '#7c3aed',
+                                textDecoration: 'none',
+                                fontSize: isUltraCompact ? 9 : 10,
+                                fontWeight: 700
+                              }}
+                              title="Ver contacto en LinkedIn / Web"
+                            >
+                              👤
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </div>
